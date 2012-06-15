@@ -1,126 +1,127 @@
 <?php
-/**
-* $Id$
-*
-* Copyright (c) 2011, Michael Dubé.  All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-* - Redistributions of source code must retain the above copyright notice,
-*   this list of conditions and the following disclaimer.
-* - Redistributions in binary form must reproduce the above copyright
-*   notice, this list of conditions and the following disclaimer in the
-*   documentation and/or other materials provided with the distribution.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*
-* Amazon S3 is a trademark of Amazon.com, Inc. or its affiliates.
-*/
+
+App::import('Vendor', 'S3');
 
 /**
-* Amazon S3 Cakephp 2 Component
-*
-* Based on work of Donovan Schönknecht > http://undesigned.org.za/2007/10/22/amazon-s3-php-class
-* 
-* @link https://github.com/mikedube-/cakephp2-amazon-s3
-* @version 0.1-dev
-*/
-
+ * Amazon S3 Cakephp 2 Component
+ *
+ * Based on work of Donovan Schönknecht > http://undesigned.org.za/2007/10/22/amazon-s3-php-class
+ * Forked from https://github.com/mikedube-/cakephp2-amazon-s3 by Michael Dube
+ * 
+ * @author Alex Mamonchik alex.mamonchik@gmail.com
+ * @link https://github.com/alexmamonchik/cakephp2-amazon-s3
+ * @version 0.1-dev
+ */
 class S3Component extends Component {
-    /**
-     * @var object S3 Vendor instance
-     */
-    private $S3Vendor;
 
-    /**
-     * @var string Object Name of the latest added object
-     */
-    private $objectName;
+	/**
+	 * @var object S3 Vendor instance
+	 */
+	private $S3Vendor;
 
-    /**
-     * @var string Amazon S3 Target Bucket
-     */
-    private $bucket     =   EXTERNAL_SERVICE_S3_BUCKET;
+	/**
+	 * @var string Object Name of the latest added object
+	 */
+	private $objectName;
 
-    /**
-     * @var string Base URL of Amazon S3
-     */
-    private $baseUrlS3   =   'https://s3.amazonaws.com/';
-    
-    /*
-    * =====================
-    * Component Overloading
-    */
+	/**
+	 * @var string Amazon S3 Target Bucket
+	 */
+	private $bucket = null;
 
-    public function initialize( $controller ) {
-        App::import( 'Vendor', 'S3' );
+	/**
+	 * @var string Base URL of Amazon S3
+	 */
+	private $baseUrlS3 = 'https://s3.amazonaws.com/';
 
-        $this->S3Vendor   =   new S3( EXTERNAL_SERVICE_S3_ACCESS_KEY, EXTERNAL_SERVICE_S3_SECRET_KEY );
-    }
 
-    /*
-    * =====================
-    * Public Methods
-    */
+	public function initialize($controller) {
 
-    /**
-     * PUT an object based on a file system path
-     *
-     * @param string $path Absolute path of the file to upload
-     * @param string $prefix Prefix (should be used to upload in folder, by exemple)
-     * @return bool Result of the upload
-     */
-    public function addObjectFromFilePath( $path, $prefix = null ) {
-        $tmpObjectName =   $prefix . $this->random();
+		$this->S3Vendor = new S3(Configure::read('Amazon.key'), Configure::read('Amazon.secret'));
+	}
 
-        $s3Result =   $this->S3Vendor->putObject(
-            $this->S3Vendor->inputFile(
-                $path, false
-            ),
-            $this->bucket,
-            $tmpObjectName,
-            S3::ACL_PUBLIC_READ
-        );
+	
+	/**
+	 * Check connect to Amazon
+	 * @return boolean - true if connected to amazon 
+	 */
+	public function isConnected() {
+		
+		return $this->S3Vendor->hasAuth();
+	}
 
-        if( $s3Result ) {
-            $this->objectName  =   $tmpObjectName;
-        }
 
-        return $s3Result;
-    }
+	/**
+	 * Create new folder (Bucket)
+	 * @param string $name - name of Bucket
+	 * @param string $access -
+	 *		'p'   - private
+	 *		'prw' - public read write
+	 *		'pr'  - public read
+	 *		'ar'  - authenticated read
+	 * @return boolean - true if success created
+	 */
+	public function createFolder($name = '', $access = '') {
+		
+		$acc = '';
+		switch ($access) {
+			case 'prw':
+				$acc = S3::ACL_PUBLIC_READ_WRITE;
+				break;
+			case 'pr':
+				$acc = S3::ACL_PUBLIC_READ;
+				break;
+			case 'ar':
+				$acc = S3::ACL_AUTHENTICATED_READ;
+				break;
+			default :
+				$acc = S3::ACL_PRIVATE;
+		}
+		
+		return $this->S3Vendor->putBucket($name, $acc);
+	}
 
-    /**
-     * Get the complete path of the latest added object
-     *
-     * @return string Path
-     */
-    public function url() {
-        return $this->baseUrlS3 . $this->bucket . '/' . $this->objectName;
-    }
+	
+	/**
+	 * Delete folder (Bucket)
+	 * @todo - make recursive deleting
+	 * @param string $name - name of folder for delete
+	 * @return type 
+	 */
+	public function deleteFolder($name = '', $recursive = false) {
+		
+		return $this->S3Vendor->deleteBucket($name);
+	}
 
-    /*
-    * =====================
-    * Private Methods
-    */
+	
+	public function uploadFile($path_from = '', $to_bucket = '', $unique = false) {
+		
+		if ($unique) {
+			// save with unique name
+		}
+	}
 
-    private function random( $length = 20 ) {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $string = uniqid( '', true );    
-        for ($p = 0; $p < $length; $p++) {
-            $string .= $characters[ mt_rand( 0, strlen( $characters -1  ) ) ];
-        }
-        return $string;
-    }
+	public function getFile($filename = '', $save_to = null) {
+		
+	}
+
+	public function deleteFile($filename = '') {
+		
+	}
+
+	/*
+	 * =====================
+	 * Private Methods
+	 */
+
+	private function random($length = 20) {
+
+		$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		$string = uniqid('', true);
+		for ($p = 0; $p < $length; $p++) {
+			$string .= $characters[mt_rand(0, strlen($characters - 1))];
+		}
+		return $string;
+	}
 
 }
