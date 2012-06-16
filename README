@@ -1,3 +1,21 @@
 Amazon S3 Component for CakePHP 2.x
 
 fork from https://github.com/mikedube-/cakephp2-amazon-s3
+
+Installation
+
+1. copy S3Component.php to your components folder
+
+2. define settings:
+    copy config.php to Config folder and add to bootstrap.php this row:
+		
+		Configure::load('config');
+
+	or just set variables in core.php as 
+	
+		Configure::write('Amazon.key', 'KEY');
+	
+all roes from config.php"
+
+
+3.get last code from http://undesigned.org.za/2007/10/22/amazon-s3-php-class and put S3.php to Vendor folder
