@@ -17,5 +17,9 @@ Installation
 	
 all roes from config.php"
 
+3. get last code from http://undesigned.org.za/2007/10/22/amazon-s3-php-class and put S3.php to Vendor folder
 
-3.get last code from http://undesigned.org.za/2007/10/22/amazon-s3-php-class and put S3.php to Vendor folder
+
+Implementation
+
+	public $components = array('S3'); in your controller
