@@ -24,16 +24,6 @@ class S3Component extends Component {
 	 */
 	private $prefix = '';
 
-	/**
-	 * @var string Amazon S3 Target Bucket
-	 */
-	private $bucket = null;
-
-	/**
-	 * @var string Base URL of Amazon S3
-	 */
-	private $baseUrlS3 = 'https://s3.amazonaws.com/';
-
 
 	public function initialize($controller) {
 
@@ -79,7 +69,7 @@ class S3Component extends Component {
 		if ($recursive) {
 			$files = $this->getFileList($name);
 			foreach ($files as $file) {
-				$this->deleteFile($this->prefix.$name, $file);
+				$this->deleteFile($name, $file);
 			}
 		}
 		
@@ -135,9 +125,16 @@ class S3Component extends Component {
 		
 	}
 
+	
+	/**
+	 * Delete file from bucket
+	 * @param string $bucket - name of bucket
+	 * @param string $filename - name of file
+	 * @return boolean
+	 */
 	public function deleteFile($bucket ='', $filename = '') {
 		
-		
+		return $this->S3Vendor->deleteObject($this->prefix.$bucket, $filename);
 	}
 
 	/*
